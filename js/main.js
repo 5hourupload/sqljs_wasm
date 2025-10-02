@@ -1,6 +1,6 @@
-import { initializeDatabase, db } from './db.js'; // Import db, removed generateTableNameFromUrl as it's no longer used here
+import { initializeDatabase, initializeDatabaseFromCSV, db } from './db.js';
 import { executeQuery } from './query.js';
-// import { fileSources } from './csvSources.js'; // Removed: No longer loading from CSV sources defined here
+import { fileSources } from './csvSources.js';
 import { initializeCopyButton } from './ui/copyButton.js';
 import { startTimer, stopTimer, displayTime } from './ui/timer.js';
 
@@ -47,11 +47,20 @@ initializeCopyButton();
 
 startTimer();
 
+// Configuration: Set to 'sqlite' to load from SQLite DB, or 'csv' to load from CSV sources
+const dataSourceMode = 'csv'; // Change this to 'sqlite' to use the SQLite database
+
+// SQLite database URL
 const dbUrl = "https://github.com/aewshopping/history-books-lite/raw/refs/heads/main/data.db";
 
-initializeDatabase(dbUrl)
+// Initialize database based on mode
+const initPromise = dataSourceMode === 'csv' 
+    ? initializeDatabaseFromCSV(fileSources)
+    : initializeDatabase(dbUrl);
+
+initPromise
     .then(() => {
-        // Database is initialized from the .db URL.
+        // Database is initialized.
         // Set an initial query.
         try {
             const sqlInput = document.getElementById('sql-input');

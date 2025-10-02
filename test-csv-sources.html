@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CSV Sources with Custom Table Names</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>CSV Sources Test with Custom Table Names</h1>
+        <div id="timer"></div>
+        <div id="status">Initializing SQL.js...</div>
+
+        <h2>Data Source Configuration</h2>
+        <pre id="source-config" style="background: #f4f4f4; padding: 10px; border-radius: 5px;">
+Loading configuration...
+        </pre>
+
+        <h2>Query Data</h2>
+        <p>Enter SQL query (e.g., SELECT * FROM your_table_name LIMIT 5):</p>
+        <textarea id="sql-input">SELECT name FROM sqlite_master WHERE type='table';</textarea>
+        <button id="execute-button">Execute Query</button>
+
+        <h3>Loaded Tables:</h3>
+        <ul id="loaded-tables-list"></ul>
+
+        <button id="download-db-button">Download Database</button>
+
+        <h2>Results</h2>
+        <div id="results">
+            <button id="copy-button" class="copy-button">Copy</button>
+            <p>Query results will appear here.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import necessary modules
+        import { initializeDatabaseFromCSV, db } from './js/db.js';
+        import { executeQuery } from './js/query.js';
+        import { initializeCopyButton } from './js/ui/copyButton.js';
+        import { startTimer, stopTimer, displayTime } from './js/ui/timer.js';
+
+        // Define test CSV sources with custom table names
+        const testSources = [
+            {
+                url: 'https://raw.githubusercontent.com/datasets/country-codes/master/data/country-codes.csv',
+                tableName: 'countries',  // Custom table name instead of 'country-codes'
+                type: 'csv'
+            },
+            {
+                url: 'https://raw.githubusercontent.com/datasets/airport-codes/master/data/airport-codes.csv',
+                tableName: 'airports',  // Custom table name instead of 'airport-codes'
+                type: 'csv'
+            },
+            {
+                url: 'https://raw.githubusercontent.com/datasets/world-cities/master/data/world-cities.csv',
+                // No custom table name - will default to 'world_cities'
+                type: 'csv'
+            }
+        ];
+
+        // Display the configuration
+        document.getElementById('source-config').textContent = JSON.stringify(testSources, null, 2);
+
+        // Initialize UI components
+        const executeButton = document.getElementById('execute-button');
+        const downloadDbButton = document.getElementById('download-db-button');
+
+        if (executeButton) {
+            executeButton.addEventListener('click', executeQuery);
+        }
+
+        if (downloadDbButton) {
+            downloadDbButton.addEventListener('click', () => {
+                if (db) {
+                    try {
+                        const data = db.export();
+                        const blob = new Blob([data], { type: 'application/octet-stream' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'database.db';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        console.log("Database download initiated.");
+                    } catch (e) {
+                        console.error("Error exporting database:", e);
+                        alert("Error exporting database. See console for details.");
+                    }
+                } else {
+                    console.error("Database not initialized. Cannot download.");
+                    alert("Database not yet initialized. Please wait or try reloading.");
+                }
+            });
+        }
+
+        initializeCopyButton();
+        startTimer();
+
+        // Initialize database from CSV sources
+        initializeDatabaseFromCSV(testSources)
+            .then(() => {
+                console.log("Database initialized from CSV sources.");
+                
+                // Update the initial query to show all tables
+                const sqlInput = document.getElementById('sql-input');
+                if (sqlInput) {
+                    sqlInput.value = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;";
+                }
+                
+                executeQuery();
+                stopTimer();
+                displayTime();
+            })
+            .catch(error => {
+                console.error("Failed to initialize the application:", error);
+                const statusDiv = document.getElementById('status');
+                if (statusDiv) {
+                    statusDiv.innerHTML = `<p class="error">Application initialization failed: ${error.message}</p>`;
+                }
+                stopTimer();
+                displayTime();
+            });
+    </script>
+</body>
+</html>
