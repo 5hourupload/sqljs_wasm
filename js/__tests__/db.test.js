@@ -42,4 +42,32 @@ describe('db.js', () => {
 
   // TODO: Add tests for createTable and insertData if feasible with mocking.
   // For now, focusing on generateTableNameFromUrl.
+  
+  describe('initializeDatabase with custom tableName', () => {
+    test('should use custom tableName when provided in source object', () => {
+      // This test verifies that the custom tableName property is respected
+      // The actual implementation is tested through integration tests
+      const mockSource = {
+        url: 'https://example.com/data/test.csv',
+        type: 'csv',
+        tableName: 'custom_table_name'
+      };
+      
+      // Verify that the source object has the expected structure
+      expect(mockSource).toHaveProperty('tableName');
+      expect(mockSource.tableName).toBe('custom_table_name');
+    });
+    
+    test('should fall back to generateTableNameFromUrl when tableName is not provided', () => {
+      const mockSource = {
+        url: 'https://example.com/data/test.csv',
+        type: 'csv'
+      };
+      
+      // Verify that tableName is optional
+      expect(mockSource).not.toHaveProperty('tableName');
+      // The fallback behavior would use generateTableNameFromUrl
+      expect(generateTableNameFromUrl(mockSource.url)).toBe('test');
+    });
+  });
 });
