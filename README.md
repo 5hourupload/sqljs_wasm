@@ -69,7 +69,15 @@ The application is structured as follows:
 *   `js/csvSources.js`:
     *   **Purpose**: This file acts as a configuration list. It defines where the application should fetch its initial data from.
     *   **Key Functions/Inputs**:
-        *   Exports `fileSources`: An array of objects. Each object represents a data file and contains its `url` (internet address), `type` ('csv' or 'tsv'), and optionally a `tableName` if a custom name is desired for the database table.
+        *   Exports `fileSources`: An array of objects. Each object represents a data file and contains:
+            *   `url` (required): The internet address of the data file
+            *   `type` (required): The file type ('csv' or 'tsv')
+            *   `tableName` (optional): A custom name for the database table. If not provided, the table name will be derived from the filename
+    *   **Table Naming**:
+        *   When `tableName` is provided, it will be used as the table name (after sanitization)
+        *   When `tableName` is not provided, the table name is generated from the filename (e.g., 'books-tags.csv' becomes 'books_tags')
+        *   Special characters in table names are replaced with underscores
+        *   Table names starting with numbers are prefixed with 'table_'
     *   **Interactions**:
         *   Is used by `js/main.js`, which passes `fileSources` to `js/db.js`'s `initializeDatabase` function.
 
@@ -132,11 +140,17 @@ The application is structured as follows:
 ## How to Use
 
 1.  Open the `index.html` file in a web browser.
-2.  The application will automatically attempt to load and parse CSV data from the predefined sources specified in `js/csvSources.js`.
+2.  The application will automatically attempt to load and parse CSV/TSV data from the predefined sources specified in `js/csvSources.js`.
 3.  The status of the data loading process will be displayed on the page.
-4.  Once the data is loaded, you can enter an SQL query into the text area. The data is loaded into a table named `csv_data`. For example, you can use a query like: `SELECT * FROM csv_data LIMIT 10;`
-5.  Click the "Execute Query" button.
-6.  The results of your query will be displayed below the button.
+4.  Once the data is loaded, you can enter an SQL query into the text area. Each data source is loaded into its own table with either:
+    - A custom table name if specified in `csvSources.js` (e.g., 'categories' for cats.csv)
+    - A name derived from the filename if no custom name is provided (e.g., 'books_tags' for books-tags.csv)
+5.  Example queries:
+    - `SELECT * FROM categories LIMIT 10;` - Query the categories table (custom name for cats.csv)
+    - `SELECT * FROM books LIMIT 10;` - Query the books table (custom name for books.tsv)
+    - `SELECT * FROM books_tags LIMIT 10;` - Query the books_tags table (derived from books-tags.csv)
+6.  Click the "Execute Query" button.
+7.  The results of your query will be displayed below the button.
 
 ## Potential Enhancements
 

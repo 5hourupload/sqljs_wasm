@@ -1,6 +1,6 @@
-import { initializeDatabase, db } from './db.js'; // Import db, removed generateTableNameFromUrl as it's no longer used here
+import { initializeDatabase, db, generateTableNameFromUrl } from './db.js';
 import { executeQuery } from './query.js';
-// import { fileSources } from './csvSources.js'; // Removed: No longer loading from CSV sources defined here
+import { fileSources } from './csvSources.js';
 import { initializeCopyButton } from './ui/copyButton.js';
 import { startTimer, stopTimer, displayTime } from './ui/timer.js';
 
@@ -47,26 +47,19 @@ initializeCopyButton();
 
 startTimer();
 
-const dbUrl = "https://github.com/aewshopping/history-books-lite/raw/refs/heads/main/data.db";
-
-initializeDatabase(dbUrl)
+// Option 1: Load from CSV/TSV sources with custom table names
+initializeDatabase(fileSources)
     .then(() => {
-        // Database is initialized from the .db URL.
-        // Set an initial query.
+        // Database is initialized from CSV/TSV sources.
+        // Set an initial query using the first source's table name.
         try {
             const sqlInput = document.getElementById('sql-input');
-            if (db && sqlInput) {
-                // Attempt to get the first table name from the loaded database
-                const tablesResult = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' LIMIT 1;");
-                if (tablesResult.length > 0 && tablesResult[0].values && tablesResult[0].values.length > 0) {
-                    const firstTableName = tablesResult[0].values[0][0];
-                    sqlInput.value = `SELECT * FROM "${firstTableName}" LIMIT 5;`;
-                    console.log(`Initial query set for table: ${firstTableName}`);
-                } else {
-                    // Fallback if no tables are found or db structure is unexpected
-                    sqlInput.value = `SELECT 'No tables found or unable to determine first table.' AS Info;`;
-                    console.warn("No tables found in the database to set an initial query, or db is not as expected.");
-                }
+            if (fileSources && fileSources.length > 0 && sqlInput) {
+                const firstSource = fileSources[0];
+                // Use the custom table name if provided, otherwise generate from URL
+                const firstTableName = generateTableNameFromUrl(firstSource.url, firstSource.tableName);
+                sqlInput.value = `SELECT * FROM "${firstTableName}" LIMIT 5;`;
+                console.log(`Initial query set for table: ${firstTableName}`);
             }
         } catch (error) {
             console.error(`Could not dynamically set initial query: ${error.message}`);
@@ -75,11 +68,45 @@ initializeDatabase(dbUrl)
                 sqlInput.value = `SELECT 'Error setting initial query.' AS Error;`;
             }
         }
-        console.log("Database initialized. Executing initial query (if set)...");
+        console.log("Database initialized. Executing initial query...");
         executeQuery(); // Execute initial query
         stopTimer();
         displayTime();
     })
+
+// Option 2: Uncomment below to load from a SQLite database URL instead
+// const dbUrl = "https://github.com/aewshopping/history-books-lite/raw/refs/heads/main/data.db";
+// initializeDatabase(dbUrl)
+//     .then(() => {
+//         // Database is initialized from the .db URL.
+//         // Set an initial query.
+//         try {
+//             const sqlInput = document.getElementById('sql-input');
+//             if (db && sqlInput) {
+//                 // Attempt to get the first table name from the loaded database
+//                 const tablesResult = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' LIMIT 1;");
+//                 if (tablesResult.length > 0 && tablesResult[0].values && tablesResult[0].values.length > 0) {
+//                     const firstTableName = tablesResult[0].values[0][0];
+//                     sqlInput.value = `SELECT * FROM "${firstTableName}" LIMIT 5;`;
+//                     console.log(`Initial query set for table: ${firstTableName}`);
+//                 } else {
+//                     // Fallback if no tables are found or db structure is unexpected
+//                     sqlInput.value = `SELECT 'No tables found or unable to determine first table.' AS Info;`;
+//                     console.warn("No tables found in the database to set an initial query, or db is not as expected.");
+//                 }
+//             }
+//         } catch (error) {
+//             console.error(`Could not dynamically set initial query: ${error.message}`);
+//             const sqlInput = document.getElementById('sql-input');
+//             if (sqlInput) {
+//                 sqlInput.value = `SELECT 'Error setting initial query.' AS Error;`;
+//             }
+//         }
+//         console.log("Database initialized. Executing initial query (if set)...");
+//         executeQuery(); // Execute initial query
+//         stopTimer();
+//         displayTime();
+//     })
     .catch(error => {
         console.error("Failed to initialize the application:", error);
         const statusDiv = document.getElementById('status');
