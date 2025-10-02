@@ -25,7 +25,8 @@ initializeDatabase(fileSources) // Use the updated fileSources
             if (fileSources && fileSources.length > 0) {
                 const firstFileSource = fileSources[0];
                 if (firstFileSource && firstFileSource.url) {
-                    let firstTableName = generateTableNameFromUrl(firstFileSource.url);
+                    // Use custom tableName if provided, otherwise generate from URL
+                    let firstTableName = firstFileSource.tableName || generateTableNameFromUrl(firstFileSource.url);
                     console.log(`First table name determined: ${firstTableName}`);
 
                     const sqlInput = document.getElementById('sql-input');
