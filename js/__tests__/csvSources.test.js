@@ -19,6 +19,15 @@ describe('fileSources', () => {
     });
   });
 
+  test('tableName property should be optional and a string when present', () => {
+    fileSources.forEach(source => {
+      if ('tableName' in source) {
+        expect(typeof source.tableName).toBe('string');
+        expect(source.tableName.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
   test('url properties should be valid URLs', () => {
     fileSources.forEach(source => {
       expect(() => new URL(source.url)).not.toThrow();

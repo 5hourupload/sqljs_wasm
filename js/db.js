@@ -78,7 +78,7 @@ async function insertData(dbInstance, tableName, headers, dataRows) {
 /**
  * Initializes the SQL.js database and loads data from external sources.
  * @async
- * @param {{url: string, type: 'csv' | 'tsv'}[]} sources - Array of source objects, each specifying a URL and file type.
+ * @param {{url: string, type: 'csv' | 'tsv', tableName?: string}[]} sources - Array of source objects, each specifying a URL, file type, and optional table name.
  * @returns {Promise<SQL.Database>} The initialized SQL.js database instance.
  */
 async function initializeDatabase(sources) { // Parameter changed
@@ -119,7 +119,8 @@ async function initializeDatabase(sources) { // Parameter changed
                     continue;
                 }
 
-                const tableName = generateTableNameFromUrl(source.url);
+                // Use custom tableName if provided, otherwise generate from URL
+                const tableName = source.tableName || generateTableNameFromUrl(source.url);
                 await createTable(db, tableName, currentHeaders);
                 await insertData(db, tableName, currentHeaders, dataRows);
                 addTableToList(tableName); // Add table name to UI list
